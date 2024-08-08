@@ -23,7 +23,9 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static com.phs.application.config.Contant.*;
 
@@ -111,6 +113,45 @@ public class HomeController {
         model.addAttribute("sizeCm", SIZE_CM);
 
         return "shop/detail";
+    }
+
+        @GetMapping("/chitiet/{slug}/{id}")
+    public ResponseEntity<?> getProductDetail1(@PathVariable String id) {
+        // Lấy thông tin sản phẩm
+        DetailProductInfoDTO product;
+        try {
+            product = productService.getDetailProductById(id);
+        } catch (NotFoundException ex) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Product not found");
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal server error");
+        }
+
+        // Tạo một map để chứa tất cả các dữ liệu cần trả về
+        Map<String, Object> response = new HashMap<>();
+        response.put("product", product);
+
+        // Lấy sản phẩm liên quan
+        List<ProductInfoDTO> relatedProducts = productService.getRelatedProducts(id);
+        response.put("relatedProducts", relatedProducts);
+
+        // Lấy danh sách nhãn hiệu
+        List<Brand> brands = brandService.getListBrand();
+        response.put("brands", brands);
+
+        // Lấy size có sẵn
+        List<Integer> availableSizes = productService.getListAvailableSize(id);
+        response.put("availableSizes", availableSizes);
+
+        // Đặt thuộc tính "canBuy" dựa trên size có sẵn
+        response.put("canBuy", !availableSizes.isEmpty());
+
+        // Lấy danh sách size giầy
+        response.put("sizeVn", SIZE_VN);
+        response.put("sizeUs", SIZE_US);
+        response.put("sizeCm", SIZE_CM);
+
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/dat-hang")
